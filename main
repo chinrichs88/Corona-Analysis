@@ -1,9 +1,3 @@
-# Installing libs
-pip install matplotlib
-pip install yfinance
-pip install numpy
-pip install pandas
-
 # Importing libs
 import numpy as np
 import pandas as pd
