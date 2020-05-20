@@ -3,13 +3,54 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import yfinance as yf
+import datetime as dt
+
+# Ask for stock
+stock_input = input("Please choose a stock:\n")
 
 # Creating variables
 corona_data = pd.read_csv("https://covid.ourworldindata.org/data/owid-covid-data.csv")
-daimler_stock = yf.Ticker("DAI.DE")
+stock = yf.Ticker(str(stock_input))
+today = dt.date.today()
+total_cases_across_countries = []
+dates = []
 
-# Get stock info
-print(daimler_stock.info)
+# Get Close data for 2020
+stock_hist = stock.history(period="max")
+stock_2020 = stock_hist.loc["2020-01-01":today]
+stock_2020_close = (stock_2020["Close"])
 
-# Get historical data
-daimler_hist = daimler_stock.history(period="5d")
+# Get Corona cases data for 2020
+corona_data_columns = ["date", "total_cases"] 
+corona_cases = corona_data[corona_data_columns]
+corona_cases.set_index("date", inplace = True)
+
+# Sum cases across countries, safe them and the dates in individual lists
+x = dt.date(2020, 1, 1)
+while x <= today:
+    total_cases_across_countries = total_cases_across_countries + [corona_cases.loc[str(x)].sum()["total_cases"]]
+    dates = dates + [x]
+    x = x + dt.timedelta(days = 1)
+
+# Create DataFrame for Corona data
+corona_df = pd.DataFrame()
+corona_df["Date"] = dates
+corona_df["Total Cases"] = total_cases_across_countries
+corona_df.set_index("Date", inplace = True)
+
+# Merge Corona dataframe and Stock dataframe
+corona_stock_df = pd.concat([corona_df, stock_2020_close], axis = 1, sort = False)
+
+# Create scatter graph
+plt.scatter(corona_stock_df["Total Cases"], corona_stock_df["Close"])
+plt.ylabel("Stock Close Value")
+plt.xlabel("Total Corona Cases")
+plt.tick_params(axis ='x', labelsize = "small", rotation =-45) 
+plt.show()
+
+# Check correlation
+print("\nCorrelation of Corona cases and stock value according to Pearson method\n")
+print(corona_stock_df.corr(method ='pearson'))
+
+print("\n")
+print("The closer the correlation coefficient is to -1 or 1, the higher is the correlation.")
